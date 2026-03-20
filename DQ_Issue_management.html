@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Quality Issue Management & Reporting</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@300;400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #1a2744;
+    --navy-mid: #243058;
+    --blue-bar: #3a5080;
+    --red-line: #e63946;
+    --green-bar: #3cb371;
+    --bg: #f0f2f5;
+    --white: #ffffff;
+    --text-dark: #1a2744;
+    --text-mid: #4a5568;
+    --border: #dde2ec;
+    --accent: #e63946;
+  }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--navy);
+    color: white;
+    text-align: center;
+    padding: 14px 20px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    border-bottom: 3px solid var(--accent);
+  }
+
+  /* MAIN LAYOUT */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 200px 1fr 200px;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px;
+  }
+
+  .section-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--navy);
+    text-transform: uppercase;
+    border-left: 3px solid var(--accent);
+    padding-left: 8px;
+    margin-bottom: 10px;
+  }
+
+  /* DONUT CHART */
+  .donut-card {
+    display: flex;
+    flex-direction: column;
+  }
+  .donut-wrap {
+    position: relative;
+    width: 130px;
+    height: 130px;
+    margin: 0 auto;
+  }
+  .legend-list {
+    margin-top: 10px;
+    font-size: 10px;
+    color: var(--text-mid);
+    list-style: none;
+  }
+  .legend-list li {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 3px;
+  }
+  .legend-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* CENTER CHART */
+  .center-chart-card {
+    padding: 12px;
+  }
+  .chart-wrap {
+    position: relative;
+    height: 220px;
+  }
+
+  /* FILTER PANEL */
+  .filter-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .filter-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+  }
+  .filter-select {
+    width: 100%;
+    padding: 5px 8px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-size: 12px;
+    font-family: 'Barlow', sans-serif;
+    color: var(--text-dark);
+    background: white;
+    cursor: pointer;
+    appearance: auto;
+  }
+  .filter-group { margin-bottom: 2px; }
+  .btn-reset {
+    margin-top: 6px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 8px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-transform: uppercase;
+    width: 100%;
+  }
+  .btn-reset:hover { background: #c0303a; }
+
+  /* KPI ROW */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1.4fr;
+    gap: 12px;
+    padding: 0 12px 12px;
+  }
+  .kpi-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .kpi-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-mid);
+    margin-bottom: 4px;
+  }
+  .kpi-value {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1;
+  }
+
+  /* TOP EXPOSURE BAR */
+  .exposure-wrap {
+    height: 80px;
+  }
+
+  /* BOTTOM ROW */
+  .bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 0 12px 12px;
+  }
+  .gauge-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .gauge-wrap {
+    position: relative;
+    width: 160px;
+    height: 90px;
+    margin-top: 6px;
+  }
+  .gauge-value {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1;
+  }
+  .gauge-max {
+    font-size: 13px;
+    color: var(--text-mid);
+    font-weight: 400;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">Data Quality Issue Management &amp; Reporting (Remediated)</div>
+
+<!-- TOP GRID -->
+<div class="main-grid">
+
+  <!-- LEFT: DONUT -->
+  <div class="card donut-card">
+    <div class="section-label">Remediated Exception Count by Ops Team</div>
+    <div class="donut-wrap">
+      <canvas id="donutChart"></canvas>
+    </div>
+    <ul class="legend-list">
+      <li><span class="legend-dot" style="background:#2ecc71"></span>Global Loan Ops (62.81%)</li>
+      <li><span class="legend-dot" style="background:#3498db"></span>Potential DQ Chng (24%)</li>
+      <li><span class="legend-dot" style="background:#e74c3c"></span>UK Ops (6.7%)</li>
+      <li><span class="legend-dot" style="background:#f39c12"></span>Amount $850+ (2.15%)</li>
+      <li><span class="legend-dot" style="background:#9b59b6"></span>Submitted Mods (4.24%)</li>
+    </ul>
+  </div>
+
+  <!-- CENTER: BAR+LINE CHART -->
+  <div class="card center-chart-card">
+    <div class="section-label">Remediated Count by Exposure</div>
+    <div class="chart-wrap">
+      <canvas id="mainChart"></canvas>
+    </div>
+  </div>
+
+  <!-- RIGHT: FILTERS -->
+  <div class="card filter-card">
+    <div class="filter-group">
+      <div class="filter-label">Select Year</div>
+      <select class="filter-select">
+        <option>All</option>
+        <option>2022</option>
+        <option>2023</option>
+        <option>2024</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Select Month</div>
+      <select class="filter-select">
+        <option>All</option>
+        <option>January</option><option>February</option><option>March</option>
+        <option>April</option><option>May</option><option>June</option>
+        <option>July</option><option>August</option><option>September</option>
+        <option>October</option><option>November</option><option>December</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Select Quarter</div>
+      <select class="filter-select">
+        <option>All</option>
+        <option>Q1</option><option>Q2</option><option>Q3</option><option>Q4</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Select DQ Rule</div>
+      <select class="filter-select">
+        <option>All</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Select CDE</div>
+      <select class="filter-select">
+        <option>All</option>
+      </select>
+    </div>
+    <button class="btn-reset">↺ Reset</button>
+  </div>
+
+</div>
+
+<!-- KPI ROW -->
+<div class="kpi-row">
+  <div class="kpi-card">
+    <div class="kpi-label">Total Sec_Unfunded</div>
+    <div class="kpi-value">$48,210M</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Total Net Loan</div>
+    <div class="kpi-value">$98,540M</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Remediation Count</div>
+    <div class="kpi-value">16,847</div>
+  </div>
+  <div class="kpi-card">
+    <div class="section-label" style="margin-bottom:8px;">Top Exposure by Ops Team Responsible</div>
+    <div class="exposure-wrap">
+      <canvas id="exposureChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM GAUGES -->
+<div class="bottom-row">
+  <div class="gauge-card">
+    <div class="section-label">DQ Rule Covered</div>
+    <div class="gauge-wrap">
+      <canvas id="gaugeChart1"></canvas>
+      <div class="gauge-value">224 <span class="gauge-max">/ 507</span></div>
+    </div>
+  </div>
+  <div class="gauge-card">
+    <div class="section-label">CDE Covered</div>
+    <div class="gauge-wrap">
+      <canvas id="gaugeChart2"></canvas>
+      <div class="gauge-value">58 <span class="gauge-max">/ 108</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DONUT CHART ──
+new Chart(document.getElementById('donutChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Global Loan Ops', 'Potential DQ Chng', 'UK Ops', 'Amount $850+', 'Submitted Mods'],
+    datasets: [{
+      data: [62.81, 24, 6.7, 2.15, 4.24],
+      backgroundColor: ['#2ecc71','#3498db','#e74c3c','#f39c12','#9b59b6'],
+      borderWidth: 2,
+      borderColor: '#fff'
+    }]
+  },
+  options: {
+    cutout: '65%',
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed}%` } } }
+  }
+});
+
+// ── MAIN BAR + LINE CHART ──
+const labels = ['Jan\'22','Mar\'22','May\'22','Jul\'22','Sep\'22','Nov\'22','Jan\'23','Mar\'23','May\'23','Jul\'23','Sep\'23','Nov\'23','Jan\'24','Mar\'24','May\'24'];
+const barData = [800,900,3000,2800,1200,1100,800,1000,1600,1800,2700,4000,2600,1500,500];
+const lineData = [8,12,18,22,40,38,28,32,42,38,45,105,65,40,22];
+
+new Chart(document.getElementById('mainChart'), {
+  data: {
+    labels,
+    datasets: [
+      {
+        type: 'bar',
+        label: 'Remediated Count',
+        data: barData,
+        backgroundColor: '#3a5080',
+        yAxisID: 'y',
+        borderRadius: 2,
+      },
+      {
+        type: 'line',
+        label: 'Total Exposure ($M)',
+        data: lineData,
+        borderColor: '#e63946',
+        backgroundColor: 'rgba(230,57,70,0.1)',
+        pointBackgroundColor: '#e63946',
+        pointRadius: 4,
+        borderWidth: 2,
+        yAxisID: 'y1',
+        tension: 0.3,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+        labels: { font: { size: 10, family: 'Barlow' }, boxWidth: 12, padding: 10 }
+      }
+    },
+    scales: {
+      x: { ticks: { font: { size: 9 }, maxRotation: 45 }, grid: { display: false } },
+      y: {
+        type: 'linear', position: 'left',
+        title: { display: true, text: 'Remediated Count', font: { size: 9 } },
+        ticks: { font: { size: 9 } }, grid: { color: '#eee' }
+      },
+      y1: {
+        type: 'linear', position: 'right',
+        title: { display: true, text: 'Exposure ($M)', font: { size: 9 } },
+        ticks: { font: { size: 9 } },
+        grid: { drawOnChartArea: false }
+      }
+    }
+  }
+});
+
+// ── TOP EXPOSURE HORIZONTAL BAR ──
+new Chart(document.getElementById('exposureChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Potential DQ Rule Chng', 'Global Loan Operations'],
+    datasets: [{
+      data: [72, 55],
+      backgroundColor: ['#3cb371', '#1a2744'],
+      borderRadius: 3,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: {
+        ticks: { font: { size: 9 }, callback: v => `$${v}bn` },
+        grid: { color: '#eee' },
+        max: 80
+      },
+      y: { ticks: { font: { size: 9 } }, grid: { display: false } }
+    }
+  }
+});
+
+// ── GAUGE HELPER ──
+function drawGauge(canvasId, value, max, color) {
+  const pct = value / max;
+  const startAngle = Math.PI;
+  const endAngle = Math.PI + (Math.PI * pct);
+
+  new Chart(document.getElementById(canvasId), {
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: [pct, 1 - pct],
+        backgroundColor: [color, '#e8eaf0'],
+        borderWidth: 0,
+        circumference: 180,
+        rotation: 270,
+      }]
+    },
+    options: {
+      cutout: '70%',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } }
+    }
+  });
+}
+
+drawGauge('gaugeChart1', 224, 507, '#3a5080');
+drawGauge('gaugeChart2', 58, 108, '#e63946');
+</script>
+<!-- DISCLAIMER -->
+<div style="
+  margin: 0 12px 16px;
+  padding: 10px 14px;
+  background: #fff8e1;
+  border: 1px solid #f0c040;
+  border-left: 4px solid #f0a500;
+  border-radius: 4px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 11px;
+  color: #5a4a00;
+  line-height: 1.6;
+">
+  <strong style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px;">⚠ Disclaimer:</strong>
+  All figures shown in this portfolio dashboard are illustrative dummy data, including the dashboard itself.
+  Actual production data has been replaced in compliance with organizational data confidentiality policies.
+  All ownership and rights are reserved by the respective company.
+</div>
+
+</body>
+</html>
